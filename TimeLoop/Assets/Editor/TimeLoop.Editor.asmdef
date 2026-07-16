@@ -2,7 +2,8 @@
     "name": "TimeLoop.Editor",
     "rootNamespace": "TimeLoop.EditorTools",
     "references": [
-        "TimeLoop.Runtime"
+        "TimeLoop.Runtime",
+        "UnityEngine.UI"
     ],
     "includePlatforms": [
         "Editor"
