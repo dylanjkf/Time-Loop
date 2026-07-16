@@ -21,9 +21,16 @@ namespace TimeLoop.Grid
     /// Implements the simultaneous multi-actor resolution rules documented in
     /// docs/TECHNICAL_ARCHITECTURE.md section 5. Actors are processed in a fixed order (ghosts
     /// oldest-recorded first, then the live player — the caller is responsible for ordering
-    /// <paramref name="orderedInputs"/> this way) so the outcome is 100% reproducible every loop,
-    /// while still resolving genuinely simultaneous conflicts (two actors wanting the same new
-    /// tile) symmetrically rather than by "first mover wins."
+    /// <paramref name="orderedInputs"/> this way) so the outcome is 100% reproducible every loop.
+    /// When two or more actors intend the same destination tile, the earliest-in-order one claims
+    /// it and the rest bounce back to their current tile — deliberately NOT "everybody bounces."
+    /// Every actor starts every loop from the exact same spawn tile, so "several actors all take
+    /// the same first step out of spawn" is the common case, not an edge case; a symmetric bounce
+    /// there would have every co-located actor retry, and fail, the identical move forever (a
+    /// ghost always reissues the same recorded command at the same tick index regardless of
+    /// outcome). First-in-order-wins instead funnels them into a single-file queue that resolves
+    /// itself within one tick per actor, which is also the intuitive real-world reading of
+    /// "bumping into your own ghost."
     ///
     /// Known, deliberate limitation: only a single box may be pushed per tick per actor, and
     /// multi-box chain pushes (box-pushes-box) are not supported — levels are authored/generated
@@ -38,9 +45,11 @@ namespace TimeLoop.Grid
         public static MoveResolution Resolve(GridWorld world, IReadOnlyList<ActorTickInput> orderedInputs)
         {
             var currentPos = new Dictionary<GridActor, GridCoord>();
-            foreach (var input in orderedInputs)
+            var orderIndex = new Dictionary<GridActor, int>();
+            for (var i = 0; i < orderedInputs.Count; i++)
             {
-                currentPos[input.Actor] = input.Actor.Position;
+                currentPos[orderedInputs[i].Actor] = orderedInputs[i].Actor.Position;
+                orderIndex[orderedInputs[i].Actor] = i;
             }
 
             var intents = new Dictionary<GridActor, GridCoord>();
@@ -96,7 +105,14 @@ namespace TimeLoop.Grid
                 changed = false;
                 iterations++;
 
-                // Rule: two or more actors targeting the same new tile all bounce back to their start.
+                // Rule: two or more actors targeting the same new tile — the one earliest in the
+                // fixed order (oldest ghost first, live player last) claims it; the rest bounce
+                // back to their start. This deliberately is NOT symmetric "everybody bounces":
+                // every loop, every ghost (and the live player) starts from the exact same spawn
+                // tile, so the extremely common case of "several actors all take the same first
+                // step out of spawn on tick 0" needs to resolve to a single-file queue (the
+                // earliest-recorded ghost keeps moving, freeing its old tile a tick later) rather
+                // than a standoff where nobody involved ever manages to move.
                 var contested = intents
                     .Where(kv => kv.Value != currentPos[kv.Key])
                     .GroupBy(kv => kv.Value)
@@ -104,9 +120,10 @@ namespace TimeLoop.Grid
 
                 foreach (var group in contested)
                 {
+                    var winner = group.OrderBy(kv => orderIndex[kv.Key]).First().Key;
                     foreach (var kv in group)
                     {
-                        if (intents[kv.Key] != currentPos[kv.Key])
+                        if (kv.Key != winner && intents[kv.Key] != currentPos[kv.Key])
                         {
                             intents[kv.Key] = currentPos[kv.Key];
                             pendingBoxPushes.Remove(kv.Key);
