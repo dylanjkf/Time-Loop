@@ -1,0 +1,70 @@
+# Level 2-01: Reinforcements — World 2's opener. Same "two ghosts each hold one plate,
+# final self walks through unencumbered" pattern as 1-04/1-08, in a fresh, bigger layout
+# (longer spine, longer branches) to kick off World 2's default assumption of a second
+# simultaneous ghost. MAX_TIMELINES: 2 throughout World 2 per design brief, used in full here.
+#
+# ENGINE NOTE (applies to every multi-ghost level in this world): every actor (player and
+# every ghost) resets to the exact same spawn tile each loop. MoveResolver bounces *every*
+# actor that targets a tile another actor also targets that same tick back to its own
+# current position, and a ghost — being a fixed recording — would permanently desync from
+# its intended path if that ever happened to it. Fix used throughout (matches 3-01's
+# "convoy" pattern): whichever actor departs later idles exactly one extra tick per
+# already-in-motion actor before taking its first step, then follows at a constant 1-tile
+# gap. The tile a follower steps into is always the tile the actor ahead is vacating that
+# same tick — explicitly legal per MoveResolver's "unless that other actor is itself
+# vacating it this tick" rule — so the convoy never contests.
+#
+# Layout: spine at x=5, spawn (5,0), goal (5,14), door (5,13)=door:and:a+b. Branch to
+# plate A: (5,4)-(4,4)-(3,4)-(2,4)-(1,4), a dead end off the spine. Branch to plate B:
+# (5,9)-(6,9)-(7,9)-(8,9)-(9,9), a dead end off the spine. Every tile is orthogonally
+# adjacent back to spawn through floor tiles already placed; both branches are simple
+# one-tile-wide dead ends hanging off a single row each.
+#
+# Loop 0 (no ghosts yet, -> ghost1): departs tick0. Ticks0-3: Up x4, reaching (5,4).
+#   Ticks4-7: Left x4, reaching (1,4)=plate A, activating it at tick7. Loop then runs out
+#   its full LOOP_SECONDS timer (a manual Split Timeline right after tick7 would also work,
+#   since World 2 allows it, but the traced solution below never relies on that — it works
+#   with the plain fixed timer too) and ghost1 spawns, holding A forever after tick7.
+# Loop 1 (ghost1 replaying, -> ghost2): live player idles tick0 (1 tick, one already-moving
+#   actor), departs tick1. Convoy check: ghost1 is exactly 1 tick ahead the whole way up the
+#   shared spine (e.g. ghost1 vacates (5,1) for (5,2) the same tick the live player enters
+#   (5,1) from (5,0)) — no contest, ghost1's replay is unperturbed and identical to loop 0.
+#   Ticks1-9: Up x9, reaching (5,9) [passing the plate-A junction at (5,4) on tick4 without
+#   turning into it — ghost1 has already left that row for branch A by then]. Ticks10-13:
+#   Right x4, reaching (9,9)=plate B, activating it at tick13. Loop runs out its timer;
+#   ghost2 spawns, holding B forever after tick13.
+# Loop 2 (final, both ghosts replaying unperturbed — neither was ever contested by the other
+#   during loop 1, so both reproduce their recordings exactly): live player idles ticks0-1
+#   (2 ticks, two already-moving actors), departs tick2, maintaining a 1-tick gap behind
+#   ghost2 (itself 1 tick behind ghost1) the whole way up. Ticks2-15: Up x14 straight up the
+#   spine, passing both branch junctions without turning. Plate A has been held since
+#   (this loop's) tick7 and plate B since tick13 — both well before the player reaches the
+#   door tile (5,13) on tick14, so the AND door is already open and the player passes
+#   through with no bump. Tick15: Up once more onto (5,14)=goal. WinCondition satisfied at
+#   tick15 of loop 2.
+# Totals: 3 loops used (matches PAR_LOOPS) — two ghost loops plus the final pass — and 15
+#   ticks in the winning loop, well inside PAR_TICKS's generous cushion.
+NAME: 2-01 Reinforcements
+WORLD: 2
+LOOP_SECONDS: 20
+MAX_TIMELINES: 2
+PAR_LOOPS: 3
+PAR_TICKS: 22
+GRID:
+#####G#####
+#####D#####
+#####.#####
+#####.#####
+#####.#####
+#####....2#
+#####.#####
+#####.#####
+#####.#####
+#####.#####
+#1....#####
+#####.#####
+#####.#####
+#####.#####
+#####S#####
+LEGEND:
+S=spawn G=goal 1=plate:a 2=plate:b D=door:and:a+b
