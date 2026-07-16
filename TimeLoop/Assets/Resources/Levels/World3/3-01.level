@@ -1,0 +1,65 @@
+# Level 3-01: Triple Hold — World 3's opening extension of 1-04's "N ghosts each hold one
+# plate, live player walks through unencumbered" pattern to three simultaneous ghosts
+# (MAX_TIMELINES: 3). Three dead-end branches (right at y=2, left at y=4, right at y=6) hang
+# off a single one-tile-wide spine running straight from spawn (5,0) up to door (5,8) and
+# goal (5,9). Every branch tile is orthogonally adjacent back to the spine, and every spine
+# tile back to spawn — connectivity is trivial to verify by eye.
+#
+# ENGINE NOTE that applies to every multi-ghost World 3 level: ghosts reset to the exact same
+# spawn tile as the live player every loop (GhostAgent.ResetForNewLoop). Spawn's only neighbor
+# is the spine tile above it, so every actor's very first move is forced to be Up. MoveResolver
+# bounces *all* actors that target the same new tile on the same tick back to their own current
+# position — so if two co-located actors both try to step Up out of spawn on the same tick,
+# neither moves that tick (and a ghost, whose script is a fixed recording, would permanently
+# desync from its intended path if this happened to it). The fix used throughout this trace:
+# whichever actor departs later simply idles one extra tick per already-in-motion actor before
+# taking its first step. Once a follower is one tick behind, the tile it steps into next is
+# always the tile the actor ahead is that same tick vacating — explicitly legal per
+# MoveResolver's "unless that other actor is itself vacating it this tick" rule — so a
+# single-file convoy up the spine keeps a constant 1-tile gap and never contests.
+#
+# Loop 0 (no ghosts yet): live player goes for the *farthest* plate first (C at 8,6 — 9 raw
+#   moves), since it can depart on tick 0 with no one to contest. Ticks 0-5: Up x6 to (5,6).
+#   Ticks 6-8: Right x3 to (8,6)=C, arriving tick 8. Manual split (World 3 allows it).
+#   Ghost_C's recording: Up,Up,Up,Up,Up,Up,Right,Right,Right (9 ticks).
+# Loop 1 (Ghost_C replaying, departed tick 0): live player idles tick 0 (letting Ghost_C clear
+#   the spine tile alone), then heads for plate B (2,4 — 7 raw moves). Tick 0: idle. Ticks 1-4:
+#   Up x4 to (5,4). Ticks 5-7: Left x3 to (2,4)=B, arriving tick 7. Manual split.
+#   Ghost_B's recording: Idle,Up,Up,Up,Up,Left,Left,Left (8 ticks).
+#   Convoy check: Ghost_C is exactly 1 tick ahead the whole way up the shared spine (e.g. at
+#   tick 2 Ghost_C vacates (5,2) for (5,3) the same tick the live player enters (5,2) from
+#   (5,1)) — no contest.
+# Loop 2 (Ghost_C, Ghost_B replaying): live player idles ticks 0-1, then heads for the nearest
+#   plate A (8,2 — 5 raw moves). Ticks 0-1: idle. Ticks 2-3: Up x2 to (5,2). Ticks 4-6: Right x3
+#   to (8,2)=A, arriving tick 6. Manual split.
+#   Ghost_A's recording: Idle,Idle,Up,Up,Right,Right,Right (7 ticks).
+#   Convoy check: constant 1-tick gap to Ghost_B, 2-tick gap to Ghost_C, both vacate-legal.
+# Loop 3 (final — all three ghosts replaying, live player unencumbered): live player idles
+#   ticks 0-2 (one per already-departed actor), then walks the spine straight through.
+#   Ticks 3-10: Up x8, reaching the door tile (5,8) on tick 10. The door's state as evaluated
+#   for that move reflects dispatch through tick 9 — by then plate a has been held since tick 6
+#   (open from resolve 7), plate b since tick 7 (open from resolve 8), and plate c since tick 8
+#   (open from resolve 9), so the AND-door is already open; the live player walks straight
+#   through with no bump. Tick 11: Up once more onto (5,9)=goal. WinCondition (single goal
+#   tile) satisfied at tick 11.
+# Totals: 4 loops used (3 ghost loops + 1 final) against PAR_LOOPS: 4; 11 ticks in the winning
+# loop against PAR_TICKS: 14 (generous buffer for a real player's imperfect timing).
+NAME: 3-01 Triple Hold
+WORLD: 3
+LOOP_SECONDS: 20
+MAX_TIMELINES: 3
+PAR_LOOPS: 4
+PAR_TICKS: 14
+GRID:
+#####G#####
+#####D#####
+#####.#####
+#####...C##
+#####.#####
+##B...#####
+#####.#####
+#####...A##
+#####.#####
+#####S#####
+LEGEND:
+S=spawn G=goal A=plate:a B=plate:b C=plate:c D=door:and:a+b+c

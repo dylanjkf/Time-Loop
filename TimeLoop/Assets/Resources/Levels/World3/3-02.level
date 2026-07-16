@@ -1,0 +1,62 @@
+# Level 3-02: Shortcut — introduces the TeleportPad pair (World 3+). Two ghosts hold two
+# plates via the usual dead-end branches (right at y=2, left at y=4); once the AND-door opens,
+# the *live* player's unencumbered final walk steps onto pad T (5,7), which instantly relocates
+# it to pad U (5,14), skipping a long six-tile stretch of spine (y=8..13) that the ghosts never
+# need to enter at all — they only ever walk to their own branch and stop. Every tile, used or
+# not, is still a single-width extension of the one spine, orthogonally connected all the way
+# back to spawn (5,0), so nothing is unreachable even though the optimal solution skips most of
+# the upper corridor.
+#
+# Convoy note (see 3-01 for the full mechanical explanation): ghosts reset to spawn every loop,
+# spawn's only exit is Up, and MoveResolver bounces any two actors that target the same new
+# tile on the same tick. So each later-departing actor idles one extra tick per already-moving
+# actor before its first step, keeping a constant 1-tile gap the whole way up the shared spine.
+#
+# Loop 0 (no ghosts yet): live player takes the farther plate B (2,4 — 7 raw moves: up the
+#   spine then left along the branch) since it can depart immediately. Ticks 0-3: Up x4 to
+#   (5,4). Ticks 4-6: Left x3 to (2,4)=B, arriving tick 6. Manual split.
+#   Ghost_B's recording: Up,Up,Up,Up,Left,Left,Left (7 ticks, no leading idle).
+# Loop 1 (Ghost_B replaying): live player idles tick 0, then takes the nearer plate A (8,2 — 5
+#   raw moves). Tick 0: idle. Ticks 1-2: Up x2 to (5,2). Ticks 3-5: Right x3 to (8,2)=A,
+#   arriving tick 5. Manual split. Ghost_A's recording: Idle,Up,Up,Right,Right,Right (6 ticks).
+#   Convoy check: Ghost_B is 1 tick/tile ahead of the live player the whole way up the shared
+#   spine (y0..y2) — vacate-legal, no contest.
+# Loop 2 (final — both ghosts replaying, live player unencumbered): live player idles ticks
+#   0-1 (one per already-departed ghost), then walks the spine.
+#   Ticks 2-7: Up x6, reaching the door tile (5,6) on tick 7. Door state for that move reflects
+#   dispatch through tick 6 — plate a has been held since tick 5 (open from resolve 6) and
+#   plate b since tick 6 (open from resolve 7), so the AND-door is exactly open in time; the
+#   live player crosses with no bump.
+#   Tick 8: Up once more onto (5,7)=pad T. Its OnEnter fires in the same tick's dispatch and
+#   instantly relocates the player to pad U at (5,14) — the six unused spine tiles (y8-13) are
+#   skipped for free.
+#   Tick 9: Up from (5,14) to (5,15)=goal. WinCondition satisfied at tick 9.
+#   (For comparison, walking the long way with no teleport would take 6+1+6+1+1=15 raw moves
+#   plus the same 2-tick stagger, landing at tick 16 — the pad saves 7 ticks.)
+# Totals: 3 loops used (2 ghost loops + 1 final) against PAR_LOOPS: 3; 9 ticks in the winning
+# loop against PAR_TICKS: 12.
+NAME: 3-02 Shortcut
+WORLD: 3
+LOOP_SECONDS: 20
+MAX_TIMELINES: 2
+PAR_LOOPS: 3
+PAR_TICKS: 12
+GRID:
+#####G#####
+#####U#####
+#####.#####
+#####.#####
+#####.#####
+#####.#####
+#####.#####
+#####.#####
+#####T#####
+#####D#####
+#####.#####
+##B...#####
+#####.#####
+#####...A##
+#####.#####
+#####S#####
+LEGEND:
+S=spawn G=goal A=plate:a B=plate:b D=door:and:a+b T=teleport:t1:t2 U=teleport:t2:t1

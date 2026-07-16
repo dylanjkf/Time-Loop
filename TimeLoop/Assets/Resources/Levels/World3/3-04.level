@@ -1,0 +1,57 @@
+# Level 3-04: Push Through — reuses 3-01's proven three-ghost/three-plate spine exactly (same
+# branch geometry: right at y=2, left at y=4, right at y=6, AND-door at y=8), then adds a
+# MovableBox blocking the spine at (5,9), just past the door. The live player pushes it
+# straight up into a one-tile dead-end stub at (5,10), stepping into the now-clear (5,9), then
+# turns right through (6,9)-(7,9) to the goal at (8,9) — the box's resting tile (5,10) is
+# simply an unused, fully-connected stub above the turn, never needed again. Every tile is a
+# single-width extension of the spine, connected back to spawn (5,0).
+#
+# Convoy note (full explanation in 3-01): ghosts reset to spawn every loop and spawn's only
+# exit is Up, so each later-departing actor idles one extra tick per already-moving actor
+# before its first step, keeping a constant 1-tile gap up the shared spine. This section is
+# identical to 3-01, so only the results are restated here.
+#
+# Loop 0: live player takes the farthest plate C (8,6 — 9 raw moves), departing tick 0.
+#   Ticks 0-5: Up x6 to (5,6). Ticks 6-8: Right x3 to (8,6)=C, arriving tick 8. Manual split.
+#   Ghost_C's recording: Up,Up,Up,Up,Up,Up,Right,Right,Right (9 ticks).
+# Loop 1 (Ghost_C replaying): live player idles tick 0, takes plate B (2,4 — 7 raw moves).
+#   Ticks 1-4: Up x4 to (5,4). Ticks 5-7: Left x3 to (2,4)=B, arriving tick 7. Manual split.
+#   Ghost_B's recording: Idle,Up,Up,Up,Up,Left,Left,Left (8 ticks).
+# Loop 2 (Ghost_C, Ghost_B replaying): live player idles ticks 0-1, takes plate A (8,2 — 5 raw
+#   moves). Ticks 2-3: Up x2 to (5,2). Ticks 4-6: Right x3 to (8,2)=A, arriving tick 6.
+#   Manual split. Ghost_A's recording: Idle,Idle,Up,Up,Right,Right,Right (7 ticks).
+#   (All three convoy gaps are vacate-legal exactly as derived in 3-01.) The AND-door's
+#   bottleneck is Ghost_C: plate a held from tick 6 (open from resolve 7), plate b from tick 7
+#   (open from resolve 8), plate c from tick 8 (open from resolve 9) — door open from resolve 9
+#   onward for the rest of the attempt.
+# Loop 3 (final — all three ghosts replaying, live player unencumbered plus the box):
+#   Live player idles ticks 0-2, then walks the spine.
+#   Ticks 3-10: Up x8, reaching the door tile (5,8) on tick 10 — long since open (resolve 9),
+#   no bump.
+#   Tick 11: Up once more, attempting to enter (5,9) where the box sits. MoveResolver's push
+#   check sees the box's far side (5,10) is plain empty floor, not occupied by another box or
+#   actor, so the push is legal: the box moves to (5,10) and the player moves into (5,9).
+#   Tick 12: Right to (6,9). Tick 13: Right to (7,9). Tick 14: Right to (8,9)=goal.
+#   WinCondition satisfied at tick 14.
+# Totals: 4 loops used (3 ghost loops + 1 final) against PAR_LOOPS: 4; 14 ticks in the winning
+# loop against PAR_TICKS: 17.
+NAME: 3-04 Push Through
+WORLD: 3
+LOOP_SECONDS: 20
+MAX_TIMELINES: 3
+PAR_LOOPS: 4
+PAR_TICKS: 17
+GRID:
+#####.#####
+#####X..G##
+#####D#####
+#####.#####
+#####...C##
+#####.#####
+##B...#####
+#####.#####
+#####...A##
+#####.#####
+#####S#####
+LEGEND:
+S=spawn G=goal A=plate:a B=plate:b C=plate:c D=door:and:a+b+c X=box

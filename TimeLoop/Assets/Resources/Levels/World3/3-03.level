@@ -1,0 +1,69 @@
+# Level 3-03: Two Gates — two separate AND-doors gate different plate subsets on the same
+# path to the goal: door A (5,6) needs plates 1+2, door B (5,10) needs plate 3 alone. Plate 3's
+# branch (right at y=8) sits *past* door A, so whichever ghost is sent for plate 3 must be able
+# to walk through door A while recording — which means plates 1 and 2 must already be held by
+# ghosts that already exist. That forces the order: record ghost 1 and ghost 2 first (either
+# order), and only then record ghost 3. This ordering constraint — not maze complexity — is the
+# puzzle. All branches are single-width dead ends off one straight spine, fully connected back
+# to spawn (5,0).
+#
+# Convoy note (full explanation in 3-01): ghosts reset to spawn every loop and spawn's only
+# exit is Up, so each later-departing actor idles one extra tick per already-moving actor
+# before its first step, keeping a constant 1-tile gap up the shared spine.
+#
+# Loop 0 (no ghosts yet): live player takes the farther of the two door-A plates, plate 2
+#   (2,4 — 7 raw moves), departing immediately. Ticks 0-3: Up x4 to (5,4). Ticks 4-6: Left x3
+#   to (2,4)=plate 2, arriving tick 6. Manual split.
+#   Ghost_2's recording: Up,Up,Up,Up,Left,Left,Left (7 ticks).
+# Loop 1 (Ghost_2 replaying): live player idles tick 0, then takes plate 1 (8,2 — 5 raw moves).
+#   Tick 0: idle. Ticks 1-2: Up x2 to (5,2). Ticks 3-5: Right x3 to (8,2)=plate 1, arriving
+#   tick 5. Manual split. Ghost_1's recording: Idle,Up,Up,Right,Right,Right (6 ticks).
+#   Convoy check: Ghost_2 stays 1 tick/tile ahead the whole way up the shared spine — vacate-
+#   legal, no contest. Door A's AND condition is now satisfied by these two ghosts: plate 1
+#   held from tick 5 (open from resolve 6), plate 2 held from tick 6 (open from resolve 7) —
+#   door A is open for every tick from resolve 7 onward, for the rest of this attempt.
+# Loop 2 (Ghost_2, Ghost_1 replaying; door A already open): live player idles ticks 0-1, then
+#   walks all the way to plate 3 (8,8 — 11 raw moves: 8 up the spine, through door A, then 3
+#   right along the branch). Ticks 2-7: Up x6 to (5,6)=door A tile, arriving tick 7 — door A's
+#   state for that move reflects dispatch through tick 6, which already includes both plates'
+#   activation (see above), so it opens exactly in time and the player walks straight through,
+#   no bump. Ticks 8-9: Up x2 more to (5,8). Ticks 10-12: Right x3 to (8,8)=plate 3, arriving
+#   tick 12. Manual split.
+#   Ghost_3's recording: Idle,Idle,Up,Up,Up,Up,Up,Up,Up,Up,Right,Right,Right (13 ticks).
+# Loop 3 (final — all three ghosts replaying, live player unencumbered): live player idles
+#   ticks 0-2, then walks the spine straight through both doors to the goal (11 raw moves, no
+#   turns — the branches are side spurs the live player never enters).
+#   Ticks 3-8: Up x6, reaching door A (5,6) on tick 8 — door A has been open since resolve 7
+#   (see loop 2), so the player walks straight through with no bump.
+#   Ticks 9-11: Up x3 more, reaching (5,9) on tick 11.
+#   Tick 12: the 10th move attempts door B (5,10). Ghost_3 replays identically every loop, so
+#   it activates plate 3 at tick 12 in this loop too — but door B's state for the player's
+#   tick-12 move reflects dispatch only through tick 11, before that activation lands. The
+#   player bumps and stays at (5,9). This is the documented case: a ghost's plate-press and
+#   the live player's door-crossing landing on the same tick costs exactly one extra tick.
+#   Tick 13: retrying the same move, door B's state now reflects dispatch through tick 12
+#   (plate 3 held) — door open, player crosses into (5,10).
+#   Tick 14: Up once more onto (5,11)=goal. WinCondition satisfied at tick 14.
+# Totals: 4 loops used (3 ghost loops + 1 final) against PAR_LOOPS: 4; 14 ticks in the winning
+# loop (including the one natural bump at door B) against PAR_TICKS: 17.
+NAME: 3-03 Two Gates
+WORLD: 3
+LOOP_SECONDS: 20
+MAX_TIMELINES: 3
+PAR_LOOPS: 4
+PAR_TICKS: 17
+GRID:
+#####G#####
+#####E#####
+#####.#####
+#####...C##
+#####.#####
+#####D#####
+#####.#####
+##B...#####
+#####.#####
+#####...A##
+#####.#####
+#####S#####
+LEGEND:
+S=spawn G=goal A=plate:1 B=plate:2 C=plate:3 D=door:and:1+2 E=door:and:3

@@ -1,0 +1,67 @@
+# Level 3-05: Capstone — combines all three World 3 mechanics in one attempt. Reuses 3-01's
+# three-ghost/three-plate spine exactly (branches right at y=2, left at y=4, right at y=6,
+# AND-door at y=8), then 3-04's box-clear exactly (box at (5,9) pushed up into the dead-end
+# stub (5,10), player turns right through (6,9)), then instead of the goal sitting right there,
+# (7,9) is teleport pad T which instantly relocates the live player to pad U at (7,15),
+# skipping five unused spine tiles (y10-14) before the goal at (7,16). Every tile — used or
+# not — is a single-width extension of the spine or one of its dead-end branches/stubs,
+# orthogonally connected all the way back to spawn (5,0); nothing is walled off.
+#
+# Convoy note (full derivation in 3-01): ghosts reset to spawn every loop and spawn's only exit
+# is Up, so each later-departing actor idles one extra tick per already-moving actor before its
+# first step, keeping a constant 1-tile gap up the shared spine. The three-ghost section below
+# is identical to 3-01 and 3-04, so only the results are restated.
+#
+# Loop 0: live player takes the farthest plate C (8,6 — 9 raw moves), departing tick 0.
+#   Ticks 0-5: Up x6 to (5,6). Ticks 6-8: Right x3 to (8,6)=C, arriving tick 8. Manual split.
+#   Ghost_C's recording: Up,Up,Up,Up,Up,Up,Right,Right,Right (9 ticks).
+# Loop 1 (Ghost_C replaying): live player idles tick 0, takes plate B (2,4 — 7 raw moves).
+#   Ticks 1-4: Up x4 to (5,4). Ticks 5-7: Left x3 to (2,4)=B, arriving tick 7. Manual split.
+#   Ghost_B's recording: Idle,Up,Up,Up,Up,Left,Left,Left (8 ticks).
+# Loop 2 (Ghost_C, Ghost_B replaying): live player idles ticks 0-1, takes plate A (8,2 — 5 raw
+#   moves). Ticks 2-3: Up x2 to (5,2). Ticks 4-6: Right x3 to (8,2)=A, arriving tick 6.
+#   Manual split. Ghost_A's recording: Idle,Idle,Up,Up,Right,Right,Right (7 ticks).
+#   Bottleneck is Ghost_C: plate a held from tick 6 (open from resolve 7), plate b from tick 7
+#   (open from resolve 8), plate c from tick 8 (open from resolve 9) — the AND-door is open
+#   from resolve 9 onward for the rest of the attempt.
+# Loop 3 (final — all three ghosts replaying, live player unencumbered, box + teleport):
+#   Live player idles ticks 0-2, then walks the spine.
+#   Ticks 3-10: Up x8, reaching the door tile (5,8) on tick 10 — long since open (resolve 9),
+#   no bump.
+#   Tick 11: Up, pushing the box from (5,9) into the empty stub (5,10) and moving into (5,9)
+#   itself (push is unconditional — the stub is always empty floor, no plate/door state
+#   involved).
+#   Tick 12: Right to (6,9). Tick 13: Right to (7,9)=pad T — its OnEnter fires in the same
+#   tick's dispatch and instantly relocates the player to pad U at (7,15); the five unused
+#   spine tiles (y10-14) are skipped for free.
+#   Tick 14: Up once more from (7,15) to (7,16)=goal. WinCondition satisfied at tick 14.
+#   (Walking the long way with no teleport would instead take 8+1+2+6+1=18 raw moves with the
+#   same 3-tick stagger, landing at tick 20 — the pad saves 6 ticks.)
+# Totals: 4 loops used (3 ghost loops + 1 final) against PAR_LOOPS: 4; 14 ticks in the winning
+# loop against PAR_TICKS: 17.
+NAME: 3-05 Capstone
+WORLD: 3
+LOOP_SECONDS: 20
+MAX_TIMELINES: 3
+PAR_LOOPS: 4
+PAR_TICKS: 17
+GRID:
+#######G###
+#######U###
+#######.###
+#######.###
+#######.###
+#######.###
+#####.#.###
+#####X.T###
+#####D#####
+#####.#####
+#####...C##
+#####.#####
+##B...#####
+#####.#####
+#####...A##
+#####.#####
+#####S#####
+LEGEND:
+S=spawn G=goal A=plate:a B=plate:b C=plate:c D=door:and:a+b+c X=box T=teleport:t1:t2 U=teleport:t2:t1
