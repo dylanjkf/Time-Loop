@@ -1,0 +1,74 @@
+# Level 2-06: Grand Convergence — the World 2 capstone. Reuses 2-01/2-04's exact two-ghost/
+# two-plate AND-door spine unchanged (plate a left at row 4, plate b right at row 9, AND-door
+# at row 13), then chains 2-05's platform gap directly onto 2-04's box-and-turn ending, all in
+# one final approach: cross the platform, then push the box, then reach the goal. Branch to
+# plate a: (5,4)-(4,4)-(3,4)-(2,4)-(1,4). Branch to plate b: (5,9)-(6,9)-(7,9)-(8,9)-(9,9). Past
+# the door at (5,13): platform waypoints P (5,14, order 0) and Q (5,16, order 1) straddle a
+# solid one-tile chasm at (5,15) — same deliberate, hand-verified "no walked path needed between
+# named waypoints" exception used by 2-03/2-05/4-03. From Q, the box at (5,17) blocks the spine;
+# pushing it up into the dead-end catch stub at (5,18) clears (5,17) for a turn right into
+# (6,17)-(7,17)=goal, exactly like 2-04/3-04's box-and-turn ending. Every tile is a single-width
+# extension of the spine or one of its branches/stubs, connected back to spawn (5,0); nothing is
+# enclosed by more than one connection.
+#
+# Convoy note (full derivation in 2-01/MoveResolver.cs): every actor resets to the identical
+# spawn tile every loop, so whichever actor departs later idles one extra tick per
+# already-in-motion actor before its first step, then follows exactly one tile behind. The
+# two-ghost section below is identical to 2-01/2-04, so only the results are restated.
+#
+# Loop 0 (ghost1 recording, alone): t0-3 Up x4 to (5,4). t4-7 Left x4 to (1,4)=plate a, active
+#   end of t7. Loop runs its timer; ghost1 spawns, holding a forever after.
+# Loop 1 (ghost2 recording, ghost1 replaying): player idles t0 (1 tick), departs t1. Ticks1-9
+#   Up x9 to (5,9) [passes the plate-a junction at t4 without turning]. Ticks10-13 Right x4 to
+#   (9,9)=plate b, active end of t13. Loop runs its timer; ghost2 spawns, holding b forever
+#   after.
+# Loop 2 (final — both ghosts replaying unperturbed, live player unencumbered plus platform
+#   and box):
+#   Player idles t0-1 (2 ticks), departs t2, staying a constant 1-tile gap behind ghost2
+#   (itself 1 tile behind ghost1).
+#   Ticks2-14: Up x13, reaching the door tile (5,13) on tick14. Plate a held since t7, plate b
+#     since t13 — both well before t14 — so the AND door is already open, no bump.
+#   Tick15: Up (5,13)->(5,14)=P. ticksPerStep=6 for this platform: WaypointAt(t)=waypoints[
+#     floor(t/6)%2]. floor(14/6)=2 (even) -> P, floor(15/6)=2 (even) -> P still — the platform
+#     is simply sitting there when the player steps on, no surprise transition.
+#   Ticks16-17: Idle, idle (still inside the P window: floor(16/6)=2, floor(17/6)=2, both -> P).
+#   Tick18: Idle — the transition tick. WaypointAt(17)=P, WaypointAt(18)=floor(18/6)=3 (odd)
+#     -> Q. The player, having idled through t16-t18, still has a post-move position of P at the
+#     end of t18 — matching the platform's pre-tick position — so the carry rule relocates them
+#     with it: (5,14)->(5,16).
+#   Tick19: Up: target (5,17) where the box sits. Far side (5,18) is the plain, empty catch
+#     stub — push is legal: box (5,17)->(5,18), player -> (5,17). Turn row now clear.
+#   Tick20: Right (5,17)->(6,17). Tick21: Right (6,17)->(7,17)=goal. WinCondition satisfied at
+#     tick 21.
+# Totals: 3 loops used (2 ghost loops + 1 final) -> PAR_LOOPS: 3 (matches MAX_TIMELINES: 2 fully
+#   used, i.e. two ghosts plus the final live pass).
+#   21 ticks in the winning loop -> PAR_TICKS: 28 (generous buffer, matching World 2's
+#   not-a-precision-challenge style throughout).
+NAME: 2-06 Grand Convergence
+WORLD: 2
+LOOP_SECONDS: 24
+MAX_TIMELINES: 2
+PAR_LOOPS: 3
+PAR_TICKS: 28
+GRID:
+#####.#####
+#####X.G###
+#####Q#####
+###########
+#####P#####
+#####D#####
+#####.#####
+#####.#####
+#####.#####
+#####....2#
+#####.#####
+#####.#####
+#####.#####
+#####.#####
+#1....#####
+#####.#####
+#####.#####
+#####.#####
+#####S#####
+LEGEND:
+S=spawn G=goal X=box 1=plate:a 2=plate:b D=door:and:a+b P=platform:plat3:0:6 Q=platform:plat3:1:6

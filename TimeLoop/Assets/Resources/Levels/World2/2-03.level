@@ -1,0 +1,53 @@
+# Level 2-03: Ride the Gap — introduces MovingPlatform. A single live loop (no ghost at all):
+# walk onto a platform's near waypoint, wait for it to swing across a one-tile chasm, ride it
+# over, then walk on to the goal. One-tile-wide spine at x=3 from spawn (3,0) up through the
+# platform's near waypoint P (3,2); the chasm itself (y=3) is solid wall on every column —
+# MovingPlatform.WaypointAt (see Assets/Scripts/Interactables/MovingPlatform.cs) jumps the
+# platform directly between its two named coordinates every tick with no interpolation through
+# the tiles between, so the far waypoint Q (3,4) needs no walked path of its own back to spawn,
+# only the ride across. (This is the same deliberate, hand-verified exception to "every floor
+# tile reachable by walking" that 4-03 documents for its own platform gap.) From Q the path is a
+# plain two-tile walk up to the goal at (3,6).
+#
+# ticksPerStep=4 is chosen deliberately generous per the World 2 brief (this is not meant to be
+# a precision challenge): the platform sits at P for a 4-tick window every cycle and at Q for
+# a 4-tick window, so arriving at P a tick or two "late" still leaves time to catch the same
+# ride — nothing here is frame-perfect.
+#
+# Loop 0 (only loop — no ghost is ever created; PAR_LOOPS is the true minimum of 1):
+#   t0 Up (3,0)->(3,1). t1 Up (3,1)->(3,2)=P (waypoint index 0). WaypointAt(0)=WaypointAt(1)=P
+#     (floor(0/4)=floor(1/4)=0), so the platform has been sitting at P this whole time — the
+#     player's walk-on is unaffected by it.
+#   t2 Idle: WaypointAt(2)=floor(2/4)=0 -> still P, no transition yet.
+#   t3 Idle: WaypointAt(3)=floor(3/4)=0 -> still P.
+#   t4 Idle: this is the transition tick. WaypointAt(3)=P (platform's position entering t4) vs
+#     WaypointAt(4)=floor(4/4)=1 -> Q (platform's position after t4's world-tick). The player,
+#     having idled at P through t2-t4, has a post-move position of P at the end of t4's own move
+#     resolution — matching the platform's pre-tick position — so GridWorld.Step's carry rule
+#     relocates the player along with the platform: (3,2)->(3,4). (Even a player who dawdled and
+#     only reached P at t2 or t3 instead of the earliest possible t1 would still be sitting there
+#     at t4 and would still catch this exact ride — that's the "a tick or two late is fine"
+#     buffer the ticksPerStep=4 choice buys.)
+#   t5 Up (3,4)->(3,5).
+#   t6 Up (3,5)->(3,6)=goal. WinCondition satisfied at tick 6.
+# Totals: 1 loop used (no ghost recording ever needed) -> PAR_LOOPS: 1.
+#   6 ticks executed in the only loop -> PAR_TICKS: 10 (generous cushion for a real player's
+#   imperfect timing boarding the platform).
+#   6/12 = 0.5s, +~1.75s buffer -> LOOP_SECONDS: 15 (comfortably covers the whole attempt with
+#   room to spare, matching the brief's "not a precision challenge" instruction).
+NAME: 2-03 Ride the Gap
+WORLD: 2
+LOOP_SECONDS: 15
+MAX_TIMELINES: 2
+PAR_LOOPS: 1
+PAR_TICKS: 10
+GRID:
+###G###
+###.###
+###Q###
+#######
+###P###
+###.###
+###S###
+LEGEND:
+S=spawn G=goal P=platform:plat1:0:4 Q=platform:plat1:1:4

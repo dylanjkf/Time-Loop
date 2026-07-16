@@ -1,0 +1,64 @@
+# Level 2-04: Double Hold, Delivered — reuses 2-01's exact two-ghost/two-plate AND-door spine
+# (same branch geometry: plate a left at row 4, plate b right at row 9, AND-door at row 13),
+# then — following the same combination pattern 3-04 used on top of 3-01 — adds a MovableBox
+# blocking the spine just past the door, cleared by the live player alone (neither ghost ever
+# goes anywhere near it, so nothing about the two-plate section changes). Branch to plate a:
+# (5,4)-(4,4)-(3,4)-(2,4)-(1,4). Branch to plate b: (5,9)-(6,9)-(7,9)-(8,9)-(9,9). Both are
+# dead ends hanging off a single row each, identical to 2-01. Past the door at (5,13), the box
+# at (5,14) blocks the spine; pushing it up into the dead-end catch stub at (5,15) clears (5,14)
+# for a turn right into (6,14)-(7,14)-(8,14)=goal — the stub is an unused, fully-connected cap
+# above the turn, exactly like 3-04's (5,10). Every tile is a single-width extension of the
+# spine or one of its branches, connected back to spawn (5,0); nothing is enclosed by more than
+# one connection.
+#
+# Convoy note (full derivation in 2-01/MoveResolver.cs): every actor resets to the identical
+# spawn tile every loop, so whichever actor departs later idles one extra tick per
+# already-in-motion actor before its first step, then follows exactly one tile behind — always
+# legal, since the tile a follower steps into is always the tile the actor ahead is vacating
+# that same tick. This section is identical to 2-01, so only the results are restated below.
+#
+# Loop 0 (ghost1 recording, alone): t0-3 Up x4 to (5,4). t4-7 Left x4 to (1,4)=plate a,
+#   active end of t7. Loop runs its timer; ghost1 spawns, holding a forever after t7.
+# Loop 1 (ghost2 recording, ghost1 replaying): player idles t0 (1 tick), departs t1. Ticks1-9
+#   Up x9 to (5,9) [passes the plate-a junction at t4 without turning — ghost1 has already left
+#   that row for its branch]. Ticks10-13 Right x4 to (9,9)=plate b, active end of t13. Loop
+#   runs its timer; ghost2 spawns, holding b forever after t13.
+# Loop 2 (final — both ghosts replaying unperturbed, live player unencumbered plus the box):
+#   Player idles t0-1 (2 ticks, two already-moving actors), departs t2, staying a constant
+#   1-tile gap behind ghost2 (itself 1 tile behind ghost1) up the shared spine.
+#   Ticks2-14: Up x13, reaching the door tile (5,13) on tick14. Plate a has been held since
+#     (this loop's) tick7 and plate b since tick13 — both well before tick14 — so the AND door
+#     is already open; the player passes through with no bump.
+#   Tick15: Up once more, targeting (5,14) where the box sits. Its far side (5,15) is the plain,
+#     empty catch stub — the push is legal: box (5,14)->(5,15), player -> (5,14). The turn row
+#     is now clear.
+#   Tick16: Right (5,14)->(6,14). Tick17: Right (6,14)->(7,14). Tick18: Right (7,14)->(8,14)
+#     =goal. WinCondition satisfied at tick 18.
+# Totals: 3 loops used (2 ghost loops + 1 final) -> PAR_LOOPS: 3 (matches MAX_TIMELINES: 2 fully
+#   used, i.e. two ghosts plus the final live pass).
+#   18 ticks in the winning loop -> PAR_TICKS: 24 (generous buffer, matching 2-01's style).
+NAME: 2-04 Double Hold, Delivered
+WORLD: 2
+LOOP_SECONDS: 22
+MAX_TIMELINES: 2
+PAR_LOOPS: 3
+PAR_TICKS: 24
+GRID:
+#####.#####
+#####X..G##
+#####D#####
+#####.#####
+#####.#####
+#####.#####
+#####....2#
+#####.#####
+#####.#####
+#####.#####
+#####.#####
+#1....#####
+#####.#####
+#####.#####
+#####.#####
+#####S#####
+LEGEND:
+S=spawn G=goal X=box 1=plate:a 2=plate:b D=door:and:a+b

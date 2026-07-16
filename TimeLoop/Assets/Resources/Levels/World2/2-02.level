@@ -1,0 +1,93 @@
+# Level 2-02: Relay Delivery — introduces MovableBox. A single ghost pushes a box up two
+# tiles of the spine and steps out of the way into a parking alcove; the live player, arriving
+# right behind it in convoy, keeps pushing the same box the rest of the way, clears it into a
+# dead-end stub, then turns aside to a PressurePlate that opens a door standing directly
+# between the plate and the goal.
+#
+# IMPORTANT ENGINE FACT this level is built around: PressurePlate only activates from actor
+# occupancy (GridWorld.Step dispatches OnEnter/OnExit to actors only — see the dispatch loop in
+# GridWorld.Step, which iterates orderedInputs, i.e. ghosts/player, never boxes). A box pushed
+# onto a plate's tile does NOT activate it (MovableBox deliberately isn't IInteractable). So the
+# box here is never delivered onto the plate itself — its job is purely to clear the spine so
+# the live player can walk to the plate and step on it themselves.
+#
+# Layout: spine at x=5, spawn (5,0). Box starts at (5,3), blocking the spine. Ghost parks in a
+# one-tile dead-end alcove at (4,4) once its short push is done (never needed for anything
+# else — same "unused stub" reasoning as 3-04/3-05's box-catching stubs). The player keeps
+# pushing the box up through (5,6),(5,7),(5,8) into a dead-end catch stub at (5,9), which clears
+# the turn row (5,8) for a branch right into (6,8)-(7,8)=plate-(8,8)=door-(9,8)=goal — plate,
+# door and goal are three consecutive tiles with zero buffer between plate and door on purpose
+# (see the door-timing note below). Every tile — alcove, stub, spine, branch — is a single-width
+# extension directly off the spine, connected back to spawn: alcove (4,4) only touches (5,4);
+# stub (5,9) only touches (5,8); the branch only touches the spine at (5,8)/(6,8). Nothing is
+# enclosed by more than one connection.
+#
+# Loop 0 (record the ghost, alone — no contest possible yet):
+#   t0 Up (5,0)->(5,1). t1 Up (5,1)->(5,2). t2 Up (5,2)->(5,3): box present, far side (5,4)
+#     empty -> push resolves same tick: box (5,3)->(5,4), ghost -> (5,3). t3 Up (5,3)->(5,4):
+#     box present again, far side (5,5) empty -> push: box (5,4)->(5,5), ghost -> (5,4).
+#     t4 Left (5,4)->(4,4): empty floor, plain move into the parking alcove.
+#   Recording: Up,Up,Up+push,Up+push,Left,Idle,Idle,... (ghost idles at (4,4) forever after —
+#   this alcove is never revisited by anything, so parking there is harmless).
+# Loop 1 (final — ghost1 replays the script above; live player does the rest of the relay plus
+#   the whole plate/door/goal approach):
+#   Convoy (per MoveResolver's contested-tile rule, full derivation in 2-01/MoveResolver.cs):
+#   one ghost already in motion -> player idles exactly 1 tick, then follows exactly 1 tile
+#   behind for the shared spine section.
+#   t0 Ghost1 Up (5,0)->(5,1). Player idles.
+#   t1 Ghost1 Up (5,1)->(5,2) [vacates (5,1)]. Player Up (5,0)->(5,1) [legal: entering the tile
+#     Ghost1 is vacating this same tick].
+#   t2 Ghost1 Up+push: box (5,3)->(5,4), ghost1 (5,2)->(5,3) [vacates (5,2)]. Player Up
+#     (5,1)->(5,2) [legal].
+#   t3 Ghost1 Up+push: box (5,4)->(5,5), ghost1 (5,3)->(5,4) [vacates (5,3)]. Player Up
+#     (5,2)->(5,3) [legal — (5,3) is plain floor now, the box left it last tick].
+#   t4 Ghost1 Left (5,4)->(4,4) [vacates (5,4)]. Player Up (5,3)->(5,4) [legal — box already
+#     moved on to (5,5) as of t3, and Ghost1 is vacating (5,4) this same tick]. Ghost1 now
+#     idles at (4,4) for the rest of the loop, matching its recording.
+#   From here the player is alone with the box; no more contest of any kind.
+#   t5 Up: box at (5,5), far side (5,6) empty -> push: box->(5,6), player (5,4)->(5,5).
+#   t6 Up: push box (5,6)->(5,7), player -> (5,6).
+#   t7 Up: push box (5,7)->(5,8), player -> (5,7).
+#   t8 Up: box now at (5,8), far side (5,9)=stub, empty -> push: box (5,8)->(5,9), player ->
+#     (5,8) — the turn row is now clear.
+#   t9 Right (5,8)->(6,8). t10 Right (6,8)->(7,8)=plate: activates at the end of t10
+#     (occupancy 0->1), and the AND door (single source "p1") recomputes to open in that same
+#     dispatch pass.
+#   t11 Right: target (8,8)=door. Door state checked at the *start* of t11's move-resolution is
+#     whatever it was at the end of t10 — already open — so the move succeeds with no bump:
+#     player (7,8)->(8,8). Only *after* this move resolves does t11's own dispatch phase fire
+#     the player's OnExit from the now-vacated plate tile (7,8), dropping its occupancy back to
+#     0 and closing the door again — but that closes a tile the player has already safely
+#     passed through this same tick, so it changes nothing about the outcome: the player never
+#     needs to re-cross that door tile. (This is exactly why the plate sits with zero buffer
+#     tiles before the door: if there were a floor tile between plate and door, the player would
+#     leave the plate one tick before reaching the door, closing it one tick before they arrive,
+#     causing a bump. Zero buffer means "step off the plate" and "step onto the door" are the
+#     same tick, and the door's closing that tick happens after that tick's own move already used
+#     the still-open state.)
+#   t12 Right (8,8)->(9,8)=goal. WinCondition satisfied at tick 12.
+# Totals: 2 loops used (1 ghost + 1 final) -> PAR_LOOPS: 2 (true minimum — a single ghost is all
+#   this puzzle needs, matching 1-04/4-02's precedent for not being forced to spend every
+#   available timeline slot; MAX_TIMELINES stays 2 per the World 2 brief, but this level only
+#   uses one of the two slots).
+#   12 ticks executed in the final loop -> PAR_TICKS: 17 (generous ~5-tick cushion, matching
+#   2-01's generous-buffer style).
+NAME: 2-02 Relay Delivery
+WORLD: 2
+LOOP_SECONDS: 18
+MAX_TIMELINES: 2
+PAR_LOOPS: 2
+PAR_TICKS: 17
+GRID:
+#####.#####
+#####..PDG#
+#####.#####
+#####.#####
+#####.#####
+####..#####
+#####X#####
+#####.#####
+#####.#####
+#####S#####
+LEGEND:
+S=spawn G=goal X=box P=plate:p1 D=door:and:p1

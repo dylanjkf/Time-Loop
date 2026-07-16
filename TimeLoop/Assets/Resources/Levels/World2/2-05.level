@@ -1,0 +1,66 @@
+# Level 2-05: Hold and Cross — combines a single ghost holding a single plate (the 1-04/4-02
+# style "one ghost, one plate, one door" shape, not the full two-plate AND from 2-01) with a
+# MovingPlatform crossing a one-tile gap just past that door. One-tile-wide spine at x=5, spawn
+# (5,0), branch to plate a: (5,4)-(4,4)-(3,4)-(2,4)-(1,4), a dead end off the spine exactly like
+# 2-01/2-04's branches. Door (gated by plate a alone) sits at (5,8). Past the door, platform
+# waypoints P (5,9, order 0) and Q (5,11, order 1) straddle a solid one-tile chasm at (5,10) —
+# same deliberate, hand-verified exception to "everything walkable back to spawn" that
+# 2-03/4-03 use for their own platform gaps, since MovingPlatform jumps instantly between named
+# coordinates with nothing to walk through in between. From Q it's a plain two-tile walk up to
+# the goal at (5,13). Every tile is a single-width extension of the spine, connected back to
+# spawn; nothing is enclosed by more than one connection.
+#
+# Loop 0 (record the ghost, alone):
+#   t0-3 Up x4 to (5,4). t4-7 Left x4 to (1,4)=plate a, active end of t7. Loop runs its timer;
+#   ghost1 spawns, holding a forever after.
+# Loop 1 (final — ghost1 replays the script above; live player crosses the platform too):
+#   Convoy (one already-moving actor -> player idles exactly 1 tick, then follows exactly one
+#   tile behind, full derivation in 2-01/MoveResolver.cs):
+#   t0 Ghost1 Up (5,0)->(5,1). Player idles.
+#   t1 Ghost1 Up (5,1)->(5,2) [vacates (5,1)]. Player Up (5,0)->(5,1) [legal].
+#   t2 Ghost1 Up (5,2)->(5,3) [vacates (5,2)]. Player Up (5,1)->(5,2) [legal].
+#   t3 Ghost1 Up (5,3)->(5,4) [vacates (5,3)]. Player Up (5,2)->(5,3) [legal].
+#   t4 Ghost1 Left (5,4)->(4,4) [vacates (5,4)]. Player Up (5,3)->(5,4) [legal — passes the
+#     plate-a junction without turning]. Ghost1 continues down its own branch on ticks5-7,
+#     unrelated to the player's path from here on, and idles on plate a forever after t7.
+#   From here the player is alone on the spine.
+#   t5 Up (5,4)->(5,5). t6 Up (5,5)->(5,6). t7 Up (5,6)->(5,7).
+#   t8 Up: target (5,8)=door. Plate a activated at the end of (this loop's) t7 — same tick
+#     index as loop 0, since ghost1's replay is byte-identical — so the door has been open
+#     since the start of t8; the move succeeds with no bump: (5,7)->(5,8).
+#   t9 Up (5,8)->(5,9)=P. WaypointAt(8)=WaypointAt(9)=P (floor(8/4)=floor(9/4)=2, even -> P
+#     index), so the platform is simply sitting there when the player steps on; no surprise.
+#   t10 Idle (still inside the P window: floor(10/4)=2 -> P).
+#   t11 Idle (floor(11/4)=2 -> P still).
+#   t12 Idle: the transition tick. WaypointAt(11)=P, WaypointAt(12)=floor(12/4)=3, odd -> Q.
+#     The player, having idled through t10-t12, still has a post-move position of P at the end
+#     of t12 — matching the platform's pre-tick position — so the carry rule relocates them
+#     with it: (5,9)->(5,11).
+#   t13 Up (5,11)->(5,12). t14 Up (5,12)->(5,13)=goal. WinCondition satisfied at tick 14.
+# Totals: 2 loops used (1 ghost + 1 final) -> PAR_LOOPS: 2 (true minimum — this puzzle only
+#   needs one of the two available timeline slots, same as 2-02; MAX_TIMELINES stays 2 per the
+#   World 2 brief).
+#   14 ticks in the winning loop -> PAR_TICKS: 19 (generous buffer).
+NAME: 2-05 Hold and Cross
+WORLD: 2
+LOOP_SECONDS: 18
+MAX_TIMELINES: 2
+PAR_LOOPS: 2
+PAR_TICKS: 19
+GRID:
+#####G#####
+#####.#####
+#####Q#####
+###########
+#####P#####
+#####D#####
+#####.#####
+#####.#####
+#####.#####
+#1....#####
+#####.#####
+#####.#####
+#####.#####
+#####S#####
+LEGEND:
+S=spawn G=goal 1=plate:a D=door:and:a P=platform:plat2:0:4 Q=platform:plat2:1:4
