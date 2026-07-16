@@ -63,8 +63,14 @@ namespace TimeLoop.Grid
 
         public MovableBox GetBoxAt(GridCoord c) => _entities.OfType<MovableBox>().FirstOrDefault(b => b.Position == c);
 
-        /// <summary>True if a non-box, solid entity (e.g. a closed Door) occupies this tile.</summary>
-        public bool IsSolidEntityAt(GridCoord c) => _entities.Any(e => e.Position == c && e.IsSolid);
+        /// <summary>
+        /// True if a non-box, solid entity (e.g. a closed Door) occupies this tile. MovableBox is
+        /// deliberately excluded even though it's IsSolid — a box tile is only blocked if it can't
+        /// be pushed, which MoveResolver checks separately via GetBoxAt. Do not remove this
+        /// exclusion: without it, IsBlockedIgnoringBoxes returns true for every box tile and
+        /// MoveResolver's push-feasibility branch is never reached, silently disabling box pushing.
+        /// </summary>
+        public bool IsSolidEntityAt(GridCoord c) => _entities.Any(e => e.Position == c && e.IsSolid && !(e is MovableBox));
 
         /// <summary>
         /// Movement legality check used before attempting a box push — walls and closed doors block,
