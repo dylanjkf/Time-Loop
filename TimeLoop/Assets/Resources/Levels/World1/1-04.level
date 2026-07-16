@@ -1,0 +1,20 @@
+# Level 1-04: Double Hold — two ghosts each guard one plate; your final, unencumbered
+# self simply walks through once both are held. Introduces MAX_TIMELINES: 2.
+NAME: 1-04 Double Hold
+WORLD: 1
+LOOP_SECONDS: 20
+MAX_TIMELINES: 2
+PAR_LOOPS: 3
+PAR_TICKS: 10
+GRID:
+#####G#####
+#####D#####
+#####.#####
+#####.#####
+#####...B##
+#####.#####
+##A...#####
+#####.#####
+#####S#####
+LEGEND:
+S=spawn G=goal A=plate:a B=plate:b D=door:and:a+b

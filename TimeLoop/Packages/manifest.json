@@ -1,0 +1,20 @@
+{
+  "dependencies": {
+    "com.unity.inputsystem": "1.7.0",
+    "com.unity.textmeshpro": "3.0.6",
+    "com.unity.ugui": "1.0.0",
+    "com.unity.test-framework": "1.1.33",
+    "com.unity.addressables": "1.21.19",
+    "com.unity.render-pipelines.universal": "14.0.9",
+    "com.unity.2d.sprite": "1.0.0",
+    "com.unity.2d.tilemap": "1.0.0",
+    "com.unity.timeline": "1.7.6",
+    "com.unity.purchasing": "4.11.0",
+    "com.unity.modules.ui": "1.0.0",
+    "com.unity.modules.uielements": "1.0.0",
+    "com.unity.modules.audio": "1.0.0",
+    "com.unity.modules.particlesystem": "1.0.0",
+    "com.unity.modules.animation": "1.0.0",
+    "com.unity.modules.jsonserialize": "1.0.0"
+  }
+}

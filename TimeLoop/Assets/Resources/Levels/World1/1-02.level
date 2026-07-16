@@ -1,0 +1,17 @@
+# Level 1-02: Two Plates — the brief's canonical example. Your ghost holds plate A;
+# you press plate B yourself and walk straight through before releasing it.
+NAME: 1-02 Two Plates
+WORLD: 1
+LOOP_SECONDS: 20
+MAX_TIMELINES: 1
+PAR_LOOPS: 2
+PAR_TICKS: 10
+GRID:
+####G####
+####D####
+####2####
+####.####
+##1..####
+####S####
+LEGEND:
+S=spawn G=goal 1=plate:a 2=plate:b D=door:and:a+b

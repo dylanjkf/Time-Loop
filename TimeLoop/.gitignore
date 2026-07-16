@@ -1,0 +1,43 @@
+# Unity generated folders
+/Library/
+/Temp/
+/Obj/
+/Build/
+/Builds/
+/Logs/
+/UserSettings/
+/MemoryCaptures/
+/Recordings/
+
+# Rider/VSCode/Visual Studio
+.vs/
+.vsconfig
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+.idea/
+*.sublime-project
+*.sublime-workspace
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Asset meta backups
+*.orig
+
+# Addressables
+/Assets/AddressableAssetsData/*/*.bin*
+/Assets/StreamingAssets/aa.meta
+/Assets/StreamingAssets/aa/*

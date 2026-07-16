@@ -1,0 +1,18 @@
+# Level 1-01: First Steps — the "wait... I can use myself?" moment.
+# Stand on the plate; when the loop ends, your ghost holds it open forever.
+NAME: 1-01 First Steps
+WORLD: 1
+LOOP_SECONDS: 20
+MAX_TIMELINES: 1
+PAR_LOOPS: 2
+PAR_TICKS: 15
+GRID:
+####G####
+####D####
+####.####
+####.####
+##1..####
+####.####
+####S####
+LEGEND:
+S=spawn G=goal 1=plate:p1 D=door:and:p1

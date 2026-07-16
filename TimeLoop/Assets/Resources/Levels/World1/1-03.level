@@ -1,0 +1,20 @@
+# Level 1-03: The Switch — unlike a plate, a Switch stays toggled even after your
+# ghost walks away from it. The door is far from the switch, proving it doesn't need holding.
+NAME: 1-03 The Switch
+WORLD: 1
+LOOP_SECONDS: 20
+MAX_TIMELINES: 1
+PAR_LOOPS: 2
+PAR_TICKS: 12
+GRID:
+###G###
+###D###
+###.###
+###.###
+###.###
+###.###
+###.###
+##W.###
+###S###
+LEGEND:
+S=spawn G=goal W=switch:sw1 D=door:and:sw1
