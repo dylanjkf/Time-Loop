@@ -1,0 +1,53 @@
+# Level 4-02: Split-Second Switch — one ghost loop + one live loop, but the "obvious" move
+# (walk straight up the spine) is gated by a door that only a Switch on a one-tile dead-end
+# branch can open, and the switch-flip and the live player's arrival at that door land on
+# ticks exactly one apart — miss the arithmetic by a single tick and you eat a needless bump.
+# One-tile spine at x=3 from spawn (3,0) up to door (3,5) and goal (3,6); the single branch at
+# row y=3 (switch, one tile left of the spine) is a dead end directly adjacent to the spine.
+#
+# Loop 0 (recording the ghost, alone — no contest possible yet):
+#   t0 Up (3,0)->(3,1). t1 Up->(3,2). t2 Up->(3,3). t3 Left+Interact (3,3)->(2,3): the move onto
+#     the switch tile and the Interact both resolve on the same tick (Switch's flip is combinable
+#     with the arriving move), so the switch is ACTIVE at the end of t3.
+#   Recording: Up,Up,Up,Left+Interact (4 ticks).
+# Loop 1 (final — ghost replays the exact script above; live player wants to walk straight past
+#   the branch, never touching the switch itself):
+#   Both actors start at (3,0) and both want their first move to be Up — MoveResolver bounces
+#   *any* two actors that target the same new tile on the same tick, and that would permanently
+#   desync the ghost's fixed recording, so the live player must yield the first tick:
+#   t0 Ghost Up (3,0)->(3,1); player idles (bouncing here would be harmless for the player, but
+#     moving would wreck the ghost's schedule, so idle is the only acceptable choice).
+#   t1 Ghost Up (3,1)->(3,2) [vacates (3,1)]; player Up (3,0)->(3,1) [legal: entering the tile
+#     the ghost is vacating this same tick].
+#   t2 Ghost Up (3,2)->(3,3) [vacates (3,2)]; player Up (3,1)->(3,2).
+#   t3 Ghost Left+Interact (3,3)->(2,3), switch ACTIVE at end of t3 [vacates (3,3)]; player Up
+#     (3,2)->(3,3) [legal, ghost vacating].
+#   t4 Ghost now idles at (2,3) forever (recording spent). Player Up (3,3)->(3,4): door's state
+#     reflects the switch flip from the end of t3, so it has been open since the start of t4 —
+#     nothing to check here, the door isn't even in the path yet.
+#   t5 Player Up (3,4)->(3,5)=door: open since t4, no bump. Player -> (3,5).
+#   t6 Player Up (3,5)->(3,6)=goal. WinCondition satisfied at tick 6.
+# Totals: 2 loops used (1 ghost + 1 final) -> PAR_LOOPS: 2 (true minimum — a plain Switch stays
+#   toggled the rest of the loop once flipped, so a single ghost recording is enough; nothing
+#   about this puzzle needs a second ghost).
+#   Final loop: 1 forced idle tick (yielding the first move to the ghost) + 6 moves = 7 ticks
+#   executed (indices 0-6) -> PAR_TICKS: 6 (exact — the idle tick is unavoidable: spawn's only
+#   non-wall neighbor is the spine tile the ghost is also departing for, so there is no direction
+#   the live player could move on tick 0 that would both make progress and not contest the ghost).
+#   Longest single loop is the final one at 7 ticks; 7/12 = 0.583s, +~1.4s buffer -> LOOP_SECONDS: 2.
+NAME: 4-02 Split-Second Switch
+WORLD: 4
+LOOP_SECONDS: 2
+MAX_TIMELINES: 1
+PAR_LOOPS: 2
+PAR_TICKS: 6
+GRID:
+###G###
+###D###
+###.###
+##W.###
+###.###
+###.###
+###S###
+LEGEND:
+S=spawn G=goal W=switch:sw1 D=door:and:sw1

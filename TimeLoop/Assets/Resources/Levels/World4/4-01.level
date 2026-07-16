@@ -1,0 +1,65 @@
+# Level 4-01: Three on the Clock — World 4 opener. Same "three ghosts each hold one plate,
+# live player walks through unencumbered" shape as 3-01, but every distance is cut to the
+# bone: PAR_TICKS/PAR_LOOPS are the true minimum, not 3-01's generous buffer, and LOOP_SECONDS
+# is barely above what a loop needs. One-tile-wide spine at x=3 from spawn (3,0) straight up to
+# door (3,4) and goal (3,5); three dead-end one-tile branches hang off it at rows y=1,2,3, each
+# directly adjacent to the spine and back to spawn — trivial to verify by eye.
+#
+# CONVOY MECHANIC (see MoveResolver's contested-tile rule): every actor resets to the exact
+# same spawn tile every loop, and spawn's only neighbor is the spine tile above it, so every
+# actor's first available move is Up. If two co-located actors both target the same new tile on
+# the same tick, MoveResolver bounces *both* back to their start — fatal for a ghost, whose
+# script is a fixed recording that would permanently desync. Fix: whichever actor departs later
+# idles one extra tick per already-in-motion actor, then follows exactly one tile behind (always
+# legal — MoveResolver explicitly allows entering a tile the actor ahead is vacating that same
+# tick). With three raw branch distances of 4, 3, 2 (up-count + one sideways step) assigned in
+# *decreasing* order to recording order 0, 1, 2, the "N idle ticks + (distance-N) moves" total is
+# constant (=3) for every ghost, i.e. all three plates activate on the exact same tick — the
+# tightest possible AND-door timing.
+#
+# Loop 0 (Ghost X recording, alone — no ghosts exist yet, no idling needed):
+#   t0 Up (3,0)->(3,1). t1 Up->(3,2). t2 Up->(3,3). t3 Left->(2,3)=plate x, ACTIVE end of t3.
+#   Recording: Up,Up,Up,Left (4 ticks, raw distance 4).
+# Loop 1 (Ghost Y recording, Ghost X replaying its fixed 4-tick script alongside):
+#   t0 Ghost X departs (3,0)->(3,1); live player must NOT also target (3,1) this tick (would
+#     bounce Ghost X), so idles. t1 Ghost X (3,1)->(3,2) [vacates (3,1)]; player Up (3,0)->(3,1)
+#     [legal: entering the tile Ghost X just vacated]. t2 Ghost X (3,2)->(3,3) [vacates (3,2)];
+#     player Up (3,1)->(3,2). t3 Ghost X turns off-spine to (2,3) [vacates (3,3), irrelevant to
+#     player's branch]; player turns Right (3,2)->(4,2)=plate y, ACTIVE end of t3.
+#   Recording: Idle,Up,Up,Right (4 ticks: 1 idle + raw distance 3).
+# Loop 2 (Ghost Z recording, Ghosts X and Y both replaying):
+#   t0-t1: Ghost X occupies (3,1) then (3,2); Ghost Y (idling t0) would occupy (3,1) at t1 if the
+#     new recording also moved then — so the live player idles both t0 and t1 (one tick per
+#     already-departed ghost). t2 Ghost Y vacates (3,1) for (3,2) same tick player takes (3,1)
+#     [Up, (3,0)->(3,1); this is plate z's row]. t3 player turns Left (3,1)->(2,1)=plate z,
+#     ACTIVE end of t3; no contest (Ghost X is at (4,3)-bound, Ghost Y at (4,2)-bound this tick).
+#   Recording: Idle,Idle,Up,Left (4 ticks: 2 idle + raw distance 2).
+# Loop 3 (final — all three ghosts replay their fixed scripts, live player goes for the goal):
+#   Ghosts X/Y/Z each depart from spawn on their own fixed schedule above; the live player must
+#   idle 3 ticks (one per ghost already in the convoy) before its first move is uncontested:
+#   t0 idle (Ghost X alone would be bounced if player also took (3,1)). t1 idle (Ghost Y also
+#     targets (3,1) at t1). t2 idle (Ghost Z also targets (3,1) at t2). t3 Up (3,0)->(3,1)
+#     [Ghost Z vacates (3,1) for (2,1) this same tick — legal]. t4 Up->(3,2) [empty; all ghosts
+#     have moved on]. t5 Up->(3,3) [empty]. t6 Up->(3,4)=door: all three plates went active at
+#     the end of t3 (see above), so the door has been open since t4 — no bump. t7 Up->(3,5)=goal.
+#   WinCondition satisfied at tick 7 (CurrentTick=7 when CheckWinCondition first returns true).
+# Totals: 4 loops used (3 ghost loops + 1 final) = true minimum -> PAR_LOOPS: 4.
+#   Final loop: 3 idle + 5 moves (rows 1,2,3, door, goal) = 8 ticks executed (indices 0-7) ->
+#   PAR_TICKS: 7 (the exact CurrentTick value at completion — no slack).
+#   Longest single loop is the final one at 8 ticks; 8/12 = 0.667s, +~1.3s buffer -> LOOP_SECONDS: 2
+#   (24 ticks/loop, comfortably covers every loop's 4-8 tick requirement with no premature cutoff).
+NAME: 4-01 Three on the Clock
+WORLD: 4
+LOOP_SECONDS: 2
+MAX_TIMELINES: 3
+PAR_LOOPS: 4
+PAR_TICKS: 7
+GRID:
+###G###
+###D###
+##X.###
+###.Y##
+##Z.###
+###S###
+LEGEND:
+S=spawn G=goal X=plate:x Y=plate:y Z=plate:z D=door:and:x+y+z

@@ -1,0 +1,60 @@
+# Level 4-04: The Final Convergence — capstone. Reuses 4-01's three-ghost plate convoy
+# unchanged, then adds a teleport pad and a box push after the door, all under one combined
+# tight tick budget. One-tile-wide spine at x=3 from spawn (3,0) up through door (3,4) to
+# teleport pad "pad1" (3,5); pad1's partner "pad2" and everything past it live in a second,
+# separate pocket of the grid (columns 8-10) with no walkable connection to the main spine at
+# all — TeleportPad.OnEnter relocates the actor the instant it steps onto pad1, so pad2 needs no
+# walking path back to spawn, only the jump. (Same deliberate exception as 4-03's platform gap;
+# hand-verified below.) From pad2 (8,0) a box at (9,0) blocks the only route onward; pushing it
+# right into the dead-end alcove (10,0) clears (9,0) to stand on, and the goal sits directly
+# above at (9,1).
+#
+# The three-ghost convoy section is identical in structure and arithmetic to 4-01: raw branch
+# distances 4, 3, 2 (plate x at row 3, plate y at row 2, plate z at row 1) assigned in
+# decreasing order to recording order 0, 1, 2 so that "N idle ticks + (distance-N) moves" is
+# constant (=3) for all three -> every plate activates on the exact same tick, and the AND-door
+# opens the very next tick with zero slack. See 4-01's header for the full per-tick MoveResolver
+# contest-avoidance derivation (idle-N-ticks-then-follow-one-tile-behind); it is not repeated
+# tick-by-tick here, only its ghost-recording outputs and the final loop that consumes them:
+#   Ghost X (loop 0, alone): Up,Up,Up,Left -> (2,3)=plate x, ACTIVE end of t3.
+#   Ghost Y (loop 1, alongside X): Idle,Up,Up,Right -> (4,2)=plate y, ACTIVE end of t3.
+#   Ghost Z (loop 2, alongside X,Y): Idle,Idle,Up,Left -> (2,1)=plate z, ACTIVE end of t3.
+#
+# Loop 3 (final — all three ghosts replay their fixed scripts above; live player goes for the
+#   goal by way of the teleport pad and the box):
+#   t0-t2: player idles (one tick per already-departed ghost — see 4-01 for why each idle tick
+#     is forced: at t0 Ghost X alone would be bounced if the player also took (3,1); at t1 Ghost
+#     Y also targets (3,1); at t2 Ghost Z also targets (3,1)).
+#   t3 Up (3,0)->(3,1) [Ghost Z vacates (3,1) for (2,1) this same tick — legal].
+#   t4 Up->(3,2) [empty — all three ghosts have moved past this tile onto their own branches].
+#   t5 Up->(3,3) [empty].
+#   t6 Up->(3,4)=door: all three plates went active at the end of t3, so the door has been open
+#     since t4 — no bump crossing it now.
+#   t7 Up->(3,5)=pad1: the move resolves normally (pad1's tile is plain floor), then in the same
+#     tick's OnEnter dispatch the pad relocates the player straight to pad2 (8,0) — no separate
+#     tick spent "arriving" before the jump.
+#   t8 Right from (8,0)->(9,0): box present, alcove (10,0) is clear, so the push resolves in the
+#     same tick — box (9,0)->(10,0), player -> (9,0).
+#   t9 Up (9,0)->(9,1)=goal. WinCondition satisfied at tick 9.
+# Totals: 4 loops used (3 ghost loops + 1 final) = true minimum -> PAR_LOOPS: 4.
+#   Final loop: 3 idle + 7 moves (rows 1-3, door, pad1, push, goal) = 10 ticks executed (indices
+#   0-9) -> PAR_TICKS: 9 (exact — every tick is a forced idle, a forced single-tile move, the
+#   push, or the teleport-carrying move; none can be cut).
+#   Longest single loop is the final one at 10 ticks; 10/12 = 0.833s, +~1.17s buffer ->
+#   LOOP_SECONDS: 2 (24 ticks/loop — covers every loop's 4-10 tick requirement with no
+#   premature cutoff, while staying as tight as the brief allows).
+NAME: 4-04 The Final Convergence
+WORLD: 4
+LOOP_SECONDS: 2
+MAX_TIMELINES: 3
+PAR_LOOPS: 4
+PAR_TICKS: 9
+GRID:
+###T#########
+###D#########
+##X.#########
+###.Y########
+##Z.#####G###
+###S####UK.##
+LEGEND:
+S=spawn G=goal X=plate:x Y=plate:y Z=plate:z D=door:and:x+y+z T=teleport:pad1:pad2 U=teleport:pad2:pad1 K=box
