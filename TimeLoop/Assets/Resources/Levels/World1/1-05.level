@@ -1,0 +1,40 @@
+# Level 1-05: Either Door — an OR door needs only ONE of its plates held, unlike the
+# AND door in 1-02/1-04. Plate B is a reachable, perfectly valid alternative that this
+# solution simply doesn't need — proving "either" is enough.
+#
+# Trace (spine at x=3, spawn (3,0), goal (3,8), door (3,7)=door:or:a+b):
+#   Branch to B: (3,4)-(2,4)-(1,4). Branch to A: (3,2)-(4,2)-(5,2). Both dead ends off
+#   the spine, reachable by walking the spine to the junction row then stepping sideways.
+#   Loop 1 (recorded): tick1 (3,0)->(3,1), tick2 ->(3,2), tick3 ->(4,2), tick4 ->(5,2)=A.
+#     Plate A activates at tick4 -> Door.Recompute fires immediately -> door OR is open
+#     from tick4 onward for the rest of this loop and every loop after (ghost idles on A
+#     forever once its recording runs out). Loop then runs out its full LOOP_SECONDS timer
+#     (World1 has no manual split) and a ghost is spawned holding A.
+#   Loop 2 (final, live, unencumbered): ghost1 replays the tick1-4 path above and is back
+#     on A by tick4 of this loop too, so the door is already open long before the player
+#     gets there. Live player walks straight up the spine, never touching either plate:
+#     tick1 (3,1), tick2 (3,2) [passes the A junction without turning], tick3 (3,3),
+#     tick4 (3,4) [passes the B junction without turning], tick5 (3,5), tick6 (3,6),
+#     tick7 (3,7)=door — door state checked is "as of start of tick7" = open since tick4,
+#     so the player walks straight through, no bump — tick8 (3,8)=goal. Level complete at
+#     tick8 of loop 2. Total: 2 loops, ~8 ticks in the solving loop.
+#   Plate B is reachable too (spine to (3,4) then (2,4),(1,4)) but is never needed here —
+#     that's the point of OR.
+NAME: 1-05 Either Door
+WORLD: 1
+LOOP_SECONDS: 20
+MAX_TIMELINES: 1
+PAR_LOOPS: 2
+PAR_TICKS: 12
+GRID:
+###G###
+###D###
+###.###
+###.###
+#B..###
+###.###
+###..A#
+###.###
+###S###
+LEGEND:
+S=spawn G=goal A=plate:a B=plate:b D=door:or:a+b

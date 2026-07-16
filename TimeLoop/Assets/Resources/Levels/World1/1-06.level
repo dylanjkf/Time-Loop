@@ -1,0 +1,40 @@
+# Level 1-06: Careful Steps — introduces Hazard. It sits in its own dead-end branch off
+# the spine, away from the actual route, so the player can wander over and discover what
+# it does entirely by choice. The real solution (a plain plate-hold like 1-01) never goes
+# near it.
+#
+# Trace (spine at x=3, spawn (3,0), goal (3,9), door (3,8)=door:and:p1):
+#   Branch to plate P: (3,5)-(2,5)-(1,5). Branch to hazard H (decoy, off the solution):
+#   (3,2)-(4,2)-(5,2). Both are dead ends reachable straight off the spine.
+#   Loop 1 (recorded): tick1 (3,1), tick2 (3,2) [passes the hazard junction without
+#     turning into it], tick3 (3,3), tick4 (3,4), tick5 (3,5), tick6 (2,5), tick7 (1,5)=P.
+#     Plate P activates at tick7 (occupancy-based, no Interact needed) and the AND door
+#     recomputes open immediately. Loop then runs its full LOOP_SECONDS timer and spawns
+#     a ghost that holds P for the rest of every future loop (idle-forever past its
+#     recording).
+#   Loop 2 (final, live, unencumbered): ghost1 replays the tick1-7 path and is back on P
+#     by tick7 of this loop too, holding the door open well before the player arrives.
+#     Live player walks straight up the spine: tick1 (3,1) ... tick8 (3,8)=door (already
+#     open since tick7, no bump), tick9 (3,9)=goal. Level complete at tick9 of loop 2.
+#     The hazard at (5,2) is reachable (spine (3,2)->(4,2)->(5,2)) for anyone curious
+#     enough to detour into it, but the traced solution above never sets foot there.
+#   Total: 2 loops, ~9 ticks in the solving loop.
+NAME: 1-06 Careful Steps
+WORLD: 1
+LOOP_SECONDS: 20
+MAX_TIMELINES: 1
+PAR_LOOPS: 2
+PAR_TICKS: 15
+GRID:
+###G###
+###D###
+###.###
+###.###
+#P..###
+###.###
+###.###
+###..H#
+###.###
+###S###
+LEGEND:
+S=spawn G=goal P=plate:p1 H=hazard D=door:and:p1

@@ -1,0 +1,40 @@
+# Level 1-07: Two Keys, One Door — a Switch and a PressurePlate gate the very same OR
+# door, showing the two are interchangeable sources: an OR door doesn't care whether its
+# condition came from a plate held by a ghost or a switch flipped once and forgotten.
+#
+# Trace (spine at x=3, spawn (3,0), goal (3,8), door (3,7)=door:or:sw1+p1):
+#   Branch to switch W: (3,3)-(4,3)-(5,3). Branch to plate P: (3,5)-(2,5)-(1,5). Both
+#   dead ends reachable straight off the spine.
+#   Single-loop live solution (no ghost required — the switch alone is enough, exactly
+#   like 1-03, and it's the OR partner that makes this a one-loop solve unlike 1-05/1-06
+#   which needed the plate held by a ghost):
+#     tick1 (3,1), tick2 (3,2), tick3 (3,3), tick4 (4,3), tick5 (5,3)=W — move and
+#     Interact combined on the same tick, flipping switch sw1 on permanently. The OR
+#     door recomputes open immediately (tick5) and stays open the rest of the loop
+#     regardless of the player walking away.
+#     tick6 (4,3), tick7 (3,3) [back on the spine], tick8 (3,4), tick9 (3,5),
+#     tick10 (3,6), tick11 (3,7)=door (already open since tick5, no bump),
+#     tick12 (3,8)=goal. Level complete at tick12, all within loop 1.
+#   Plate P is independently reachable too: spine to (3,5) then (2,5),(1,5) — 7 ticks —
+#     and would satisfy the same OR door if held (e.g. by a ghost across two loops), but
+#     the switch path above is simpler and needs no ghost at all. MAX_TIMELINES:1 is kept
+#     available for players who experiment with the plate route instead.
+#   Total: solvable in 1 loop (~12 ticks); PAR_LOOPS gives a comfortable 2-loop cushion.
+NAME: 1-07 Two Keys, One Door
+WORLD: 1
+LOOP_SECONDS: 20
+MAX_TIMELINES: 1
+PAR_LOOPS: 2
+PAR_TICKS: 16
+GRID:
+###G###
+###D###
+###.###
+#P..###
+###.###
+###..W#
+###.###
+###.###
+###S###
+LEGEND:
+S=spawn G=goal P=plate:p1 W=switch:sw1 D=door:or:sw1+p1

@@ -1,0 +1,52 @@
+# Level 1-08: Double Hold, Long Way Home — the World 1 capstone. Same "two ghosts each
+# hold one plate, final self walks through unencumbered" pattern as 1-04, but the spine
+# is longer and there's a Hazard decoy branch along the way — a confidence check before
+# World 2 that pulls together recording, ghost replay, AND-gated cooperation, and hazard
+# awareness all at once.
+#
+# Trace (spine at x=5, spawn (5,0), goal (5,11), door (5,10)=door:and:a+b):
+#   Branch to plate A: (5,2)-(4,2)-(3,2)-(2,2). Branch to plate B: (5,5)-(6,5)-(7,5)-(8,5).
+#   Branch to hazard H (decoy, off the solution): (5,7)-(4,7)-(3,7)-(2,7). All three are
+#   dead ends reachable straight off the spine, each isolated from the rows above/below it
+#   (checked: the rows immediately above and below each branch row are plain single-tile
+#   spine with walls to both sides, so no branch connects to anything but the spine).
+#   Loop 1 (recorded, -> ghost1): tick1 (5,1), tick2 (5,2), tick3 (4,2), tick4 (3,2),
+#     tick5 (2,2)=A. Plate A activates at tick5 (occupancy). Loop runs its full
+#     LOOP_SECONDS timer; ghost1 spawns, holding A forever after (idle past tick5).
+#   Loop 2 (recorded, -> ghost2; ghost1 already replaying and back on A by tick5): live
+#     player tick1 (5,1), tick2 (5,2) [passes the A junction without turning], tick3
+#     (5,3), tick4 (5,4), tick5 (5,5), tick6 (6,5), tick7 (7,5), tick8 (8,5)=B. Plate B
+#     activates at tick8. AND condition (a+b) now true from tick8 onward for the rest of
+#     this loop and every loop after, since both ghosts idle-hold their plates forever.
+#     Loop runs out its timer; ghost2 spawns.
+#   Loop 3 (final, live, unencumbered): ghost1 holds A from tick5, ghost2 holds B from
+#     tick8 (both replay identically every loop), so the AND door is open from tick8
+#     onward before the player even sets off. Live player walks straight up the spine:
+#     tick1 (5,1) ... tick7 (5,7) [passes the hazard junction without turning into it],
+#     tick8 (5,8), tick9 (5,9), tick10 (5,10)=door (already open since tick8, no bump),
+#     tick11 (5,11)=goal. Level complete at tick11 of loop 3.
+#   The hazard at (2,7) is reachable (spine (5,7)->(4,7)->(3,7)->(2,7)) for a curious
+#   player, but neither ghost's recorded path nor the final live path ever detours there.
+#   Total: 3 loops (matches MAX_TIMELINES:2, i.e. two ghosts plus the final live pass),
+#   ~11 ticks in the solving loop.
+NAME: 1-08 Double Hold, Long Way Home
+WORLD: 1
+LOOP_SECONDS: 22
+MAX_TIMELINES: 2
+PAR_LOOPS: 3
+PAR_TICKS: 16
+GRID:
+#####G#####
+#####D#####
+#####.#####
+#####.#####
+##H...#####
+#####.#####
+#####...B##
+#####.#####
+#####.#####
+##A...#####
+#####.#####
+#####S#####
+LEGEND:
+S=spawn G=goal A=plate:a B=plate:b H=hazard D=door:and:a+b
